@@ -2,27 +2,32 @@
 
 ## Exploit overview
 
-In April 2022 the Beanstalk stablecoin protocol was drained of roughly $181 million in collateral. Attackers abused the protocol's decentralized governance system to push through two malicious proposals and siphoned funds from the treasury. The flash-loan-assisted governance attack allowed the perpetrator to control a supermajority of votes, execute an emergency function and transfer the assets to their own address【490825864822557†L71-L99】. Although the treasury lost $181 million, the attacker ultimately walked away with around $76 million after repaying the flash loans【490825864822557†L71-L99】.
+In April 2022, the Beanstalk stablecoin protocol was drained of roughly $181 million in collateral. Attackers exploited the protocol’s decentralized governance system by pushing through two malicious proposals that siphoned funds from the treasury. Leveraging a massive flash loan, the attacker temporarily acquired a supermajority of governance tokens, executed an emergency commit, and transferred the assets to their own wallet address 0x1c5dCdd006EA78a7E4783f9e6021C32935a10fb4 and a Ukraine relief donation address. Although the protocol lost $181 million, the attacker ultimately netted around $76 million after repaying the flash loans.
 
 ## Root cause
 
-The core vulnerability lay in Beanstalk's governance design. Voting power was proportional to the amount of tokens deposited into the protocol's *Diamond* contract. The project included an `emergencyCommit` function that allowed proposals to be enacted with a 2/3 super-majority after a 24-hour waiting period【490825864822557†L77-L95】. Because there were no limits on the size of deposits or safeguards against flash-loaned deposits, an attacker could temporarily borrow large sums, deposit them, gain voting control and push through a malicious proposal. This logic had not been audited and lacked monitoring【490825864822557†L102-L113】.
+The core vulnerability stemmed from Beanstalk’s governance mechanism. Voting power was directly proportional to the amount of governance tokens deposited into the protocol’s Diamond contract. The protocol included an emergencyCommit function, allowing proposals to be enacted with a 2/3 supermajority after a 24-hour waiting period. Critically, there were no safeguards against flash-loaned token deposits, enabling the attacker to borrow tokens, temporarily inflate voting power, and push through proposals. The lack of controls, combined with unaudited emergency functions, made the attack possible.
 
 ## Attack path
 
-1. **Design and deploy malicious proposals.** The attacker created two proposals (#18 and #19) that looked like ordinary governance actions but contained code to transfer Beanstalk's reserves to the attacker's address and a donation address【490825864822557†L82-L85】. They waited for the 24-hour timelock to expire.
-2. **Acquire voting power.** After the waiting period, the attacker used a series of flash loans (reportedly totalling around $1 billion in crypto assets) to deposit enough governance tokens into the Diamond contract to control approximately 79 % of the voting power【490825864822557†L87-L95】【612784540889037†L135-L139】. This far exceeded the 2/3 threshold required to trigger `emergencyCommit`.
-3. **Execute the proposals.** With a supermajority secured, the attacker called `emergencyCommit` to execute the proposals【490825864822557†L77-L95】. The proposals drained the reserves and sent the stolen tokens to both the attacker and a donation address【490825864822557†L82-L99】.
-4. **Repay loans and launder funds.** After receiving the funds, the attacker repaid the flash-loan providers and then routed the proceeds through Tornado Cash to obfuscate the trail【612784540889037†L127-L139】.
+1. Deploy malicious proposals: The attacker created two proposals (Proposal #18 and #19) that appeared innocuous but included logic to transfer protocol funds to 0x1c5dCdd006EA78a7E4783f9e6021C32935a10fb4 and the Ukraine donation wallet.
+
+2. Wait for timelock: After submission, the 24-hour governance timelock period elapsed.
+
+3. Flash-loan and deposit: The attacker used flash loans (reportedly over $1 billion) to acquire governance tokens and deposit them into the Diamond contract, gaining around 79% voting power—well above the 66.7% threshold.
+
+4. Execute proposals: The attacker invoked emergencyCommit to execute the proposals, draining the protocol’s reserves.
+
+5. Repay and launder: After transfers to 0x1c5dCdd006EA78a7E4783f9e6021C32935a10fb4 and the donation address, the attacker repaid the loans and routed most funds through Tornado Cash, keeping approximately 24,930 ETH (~$76 million).
 
 ## On-chain indicators
 
 Several on-chain signals preceded and accompanied the attack:
 
-* **Large governance deposits:** Immediately prior to the `emergencyCommit` call, a single transaction deposited an unusually large amount of governance tokens into the Diamond contract, pushing the attacker's voting share above the super-majority threshold【612784540889037†L110-L139】.
+* **Large governance deposits:** Immediately prior to the `emergencyCommit` call, a single transaction deposited an unusually large amount of governance tokens into the Diamond contract, pushing the attacker's voting share above the super-majority threshold.
 * **Multiple malicious proposals:** Two proposals were introduced in quick succession with similar payloads. Monitoring unusual proposal contents could have raised alarms.
 * **Sudden value transfer:** A single execution transferred hundreds of millions of dollars worth of tokens from Beanstalk to addresses not previously associated with the protocol.
-* **Flash-loan repayment and mixing:** Within the same block, the attacker repaid the flash loan and routed remaining funds to Tornado Cash【612784540889037†L127-L139】.
+* **Flash-loan repayment and mixing:** Within the same block, the attacker repaid the flash loan and routed remaining funds to Tornado Cash.
 
 ## Lessons learned
 
