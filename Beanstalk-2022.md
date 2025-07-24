@@ -6,7 +6,7 @@ In April 2022, the Beanstalk stablecoin protocol was drained of roughly $181 mil
 
 ## Root cause
 
-The core vulnerability stemmed from Beanstalk’s governance mechanism. Voting power was directly proportional to the amount of governance tokens deposited into the protocol’s Diamond contract. The protocol included an emergencyCommit function, allowing proposals to be enacted with a 2/3 supermajority after a 24-hour waiting period. Critically, there were no safeguards against flash-loaned token deposits, enabling the attacker to borrow tokens, temporarily inflate voting power, and push through proposals. The lack of controls, combined with unaudited emergency functions, made the attack possible.
+The core vulnerability stemmed from Beanstalk’s governance mechanism. Voting power was directly proportional to the amount of governance tokens deposited into the protocol’s Diamond contract. The protocol included an `emergencyCommit` function, allowing proposals to be enacted with a 2/3 supermajority after a 24-hour waiting period. Critically, there were no safeguards against flash-loaned token deposits, enabling the attacker to borrow tokens, temporarily inflate voting power, and push through proposals. The lack of controls, combined with unaudited emergency functions, made the attack possible.
 
 ## Attack path
 
